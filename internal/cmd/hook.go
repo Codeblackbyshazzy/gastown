@@ -210,6 +210,15 @@ func runHookClear(cmd *cobra.Command, args []string) error {
 func runHook(_ *cobra.Command, args []string) error {
 	beadID := args[0]
 
+	// Reject non-bead-shaped first args before passing to bd show, which would
+	// emit a confusing "bead 'set' not found" error. cobra has already failed to
+	// match against a registered subcommand, so anything reaching here that
+	// doesn't look like a bead ID is almost certainly a typo'd subcommand.
+	// See GH#3701.
+	if !isBeadID(beadID) {
+		return fmt.Errorf("%q is not a bead ID. See 'gt hook --help' for available subcommands and usage", beadID)
+	}
+
 	// Parse optional target agent
 	var targetAgent string
 	if len(args) > 1 {
