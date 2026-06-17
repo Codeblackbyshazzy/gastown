@@ -858,7 +858,10 @@ func slotOpenDecision(workDir, townRoot, rigName, polecatName, exitType string) 
 	hookSafe := true
 	hookTerminal := false
 	if fields != nil {
-		issueID = fields.HookBead
+		issueID = fields.LastSourceIssue
+		if issueID == "" {
+			issueID = fields.HookBead
+		}
 		if fields.HookBead != "" {
 			hookTerminal = witnessIssueTerminal(rigBeads, fields.HookBead)
 			hookSafe = hookTerminal
@@ -895,6 +898,7 @@ func slotOpenDecision(workDir, townRoot, rigName, polecatName, exitType string) 
 	}
 	gitSafe := !input.GitCheckFailed && !input.GitDirty && input.StashCount == 0 && input.UnpushedCommits == 0
 	activeMRSafe := true
+	sourceTerminal := fields != nil && issueID != "" && witnessIssueTerminal(rigBeads, issueID)
 	if fields != nil && fields.ActiveMR != "" {
 		sourceHint := fields.LastSourceIssue
 		if sourceHint == "" {
@@ -905,11 +909,14 @@ func slotOpenDecision(workDir, townRoot, rigName, polecatName, exitType string) 
 			input.ActiveMRBlocker = assessment.Reason
 		}
 		activeMRSafe = !assessment.Pending
+		if assessment.SourceTerminal {
+			sourceTerminal = true
+		}
 	}
 	input.MQCheckRequired = input.Branch != ""
 	input.HasSubmittableWork = witnessHasSubmittableWork(clonePath)
 	input.AssignedBeadTerminal = witnessIssueTerminal(rigBeads, issueID)
-	if polecat.CanIgnoreStaleCleanupStatus(input.CleanupStatus, input.AssignedBeadTerminal || hookTerminal, hookSafe, activeMRSafe, gitSafe) {
+	if polecat.CanIgnoreStaleCleanupStatus(input.CleanupStatus, input.AssignedBeadTerminal || sourceTerminal || hookTerminal, hookSafe, activeMRSafe, gitSafe) {
 		input.IgnoreCleanupStatus = true
 	}
 	input.MQNotRequired = witnessMQNotRequiredSource(rigBeads, issueID)
