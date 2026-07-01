@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -1062,11 +1061,7 @@ func closeConvoyIfComplete(townBeads, convoyID, title string, tracked []trackedI
 	reason := "All tracked issues completed"
 	closeArgs := []string{"close", convoyID, "-r", reason}
 	if err := runTownMutationAndExport(townBeads, closeArgs...); err != nil {
-		if errors.As(err, new(townJSONLExportError)) {
-			style.PrintWarning("convoy close recorded for %s, but JSONL export failed; continuing notification: %v", convoyID, err)
-		} else {
-			return false, fmt.Errorf("closing convoy: %w", err)
-		}
+		return false, fmt.Errorf("closing convoy: %w", err)
 	}
 
 	fmt.Printf("%s Auto-closed convoy 🚚 %s: %s\n", style.Bold.Render("✓"), convoyID, title)
@@ -1110,7 +1105,7 @@ func checkSingleConvoy(townBeads, convoyID string, dryRun bool) error {
 	// Check if convoy is already closed
 	if normalizeConvoyStatus(convoy.Status) == convoyStatusClosed {
 		fmt.Printf("%s Convoy %s is already closed\n", style.Dim.Render("○"), convoyID)
-		return nil
+		return persistAndNotifyConvoyCompletion(townBeads, convoyID, convoy.Title)
 	}
 
 	// Get tracked issues
@@ -1165,7 +1160,7 @@ func runConvoyClose(cmd *cobra.Command, args []string) error {
 	// Idempotent: if already closed, just report it
 	if normalizeConvoyStatus(convoy.Status) == convoyStatusClosed {
 		fmt.Printf("%s Convoy %s is already closed\n", style.Dim.Render("○"), convoyID)
-		return nil
+		return persistAndNotifyConvoyCompletion(townBeads, convoyID, convoy.Title)
 	}
 	if err := validateConvoyStatusTransition(convoy.Status, convoyStatusClosed); err != nil {
 		return fmt.Errorf("can't close convoy '%s': %w", convoyID, err)
@@ -1216,11 +1211,7 @@ func runConvoyClose(cmd *cobra.Command, args []string) error {
 	// Close the convoy
 	closeArgs := []string{"close", convoyID, "-r", reason}
 	if err := runTownMutationAndExport(townBeads, closeArgs...); err != nil {
-		if errors.As(err, new(townJSONLExportError)) {
-			style.PrintWarning("convoy close recorded for %s, but JSONL export failed; continuing notification: %v", convoyID, err)
-		} else {
-			return fmt.Errorf("closing convoy: %w", err)
-		}
+		return fmt.Errorf("closing convoy: %w", err)
 	}
 
 	fmt.Printf("%s Closed convoy 🚚 %s: %s\n", style.Bold.Render("✓"), convoyID, convoy.Title)
@@ -1325,7 +1316,7 @@ func runConvoyLand(cmd *cobra.Command, args []string) error {
 	}
 	if normalizeConvoyStatus(convoy.Status) == convoyStatusClosed {
 		fmt.Printf("%s Convoy %s is already closed\n", style.Dim.Render("○"), convoyID)
-		return nil
+		return persistAndNotifyConvoyCompletion(townBeads, convoyID, convoy.Title)
 	}
 
 	// Get tracked issues
@@ -1393,11 +1384,7 @@ func runConvoyLand(cmd *cobra.Command, args []string) error {
 	reason := "Landed by owner"
 	closeArgs := []string{"close", convoyID, "-r", reason}
 	if err := runTownMutationAndExport(townBeads, closeArgs...); err != nil {
-		if errors.As(err, new(townJSONLExportError)) {
-			style.PrintWarning("convoy close recorded for %s, but JSONL export failed; continuing notification: %v", convoyID, err)
-		} else {
-			return fmt.Errorf("closing convoy: %w", err)
-		}
+		return fmt.Errorf("closing convoy: %w", err)
 	}
 
 	fmt.Printf("\n%s Landed convoy 🚚 %s: %s\n", style.Bold.Render("✓"), convoyID, convoy.Title)
@@ -1811,25 +1798,18 @@ func persistTownBeadsJSONL(townBeads string) error {
 	return BdCmd("export", "-o", issuesPath).Dir(townBeads).Run()
 }
 
-type townJSONLExportError struct {
-	err error
-}
-
-func (e townJSONLExportError) Error() string {
-	return e.err.Error()
-}
-
-func (e townJSONLExportError) Unwrap() error {
-	return e.err
-}
-
 func runTownMutationAndExport(townBeads string, args ...string) error {
 	if err := BdCmd(args...).Dir(townBeads).WithAutoCommit().Run(); err != nil {
 		return err
 	}
+	return persistTownBeadsJSONL(townBeads)
+}
+
+func persistAndNotifyConvoyCompletion(townBeads, convoyID, title string) error {
 	if err := persistTownBeadsJSONL(townBeads); err != nil {
-		return townJSONLExportError{err: err}
+		return fmt.Errorf("persisting convoy close to JSONL: %w", err)
 	}
+	notifyConvoyCompletion(townBeads, convoyID, title)
 	return nil
 }
 

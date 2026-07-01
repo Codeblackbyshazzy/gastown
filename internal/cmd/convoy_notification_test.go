@@ -262,7 +262,7 @@ exit 0
 	}
 }
 
-func TestCloseConvoyIfComplete_CloseExportFailureDoesNotSuppressNotification(t *testing.T) {
+func TestCloseConvoyIfComplete_CloseExportFailureRequiresDurableRetryBeforeNotification(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("skipping on windows - shell stubs")
 	}
@@ -333,11 +333,14 @@ exit 0
 	closed, err := closeConvoyIfComplete(townRoot, "hq-cv-close-export-fail", "Close Export Failure", []trackedIssueInfo{
 		{ID: "gt-done", Status: "closed"},
 	}, false)
-	if err != nil {
-		t.Fatalf("closeConvoyIfComplete returned error: %v", err)
+	if err == nil {
+		t.Fatal("closeConvoyIfComplete returned nil error after close JSONL export failure")
 	}
-	if !closed {
-		t.Fatal("closeConvoyIfComplete returned closed=false, want true")
+	if closed {
+		t.Fatal("closeConvoyIfComplete returned closed=true after close JSONL export failure")
+	}
+	if err := persistAndNotifyConvoyCompletion(townRoot, "hq-cv-close-export-fail", "Close Export Failure"); err != nil {
+		t.Fatalf("persistAndNotifyConvoyCompletion returned error: %v", err)
 	}
 
 	data, err := os.ReadFile(orderPath)
@@ -347,6 +350,7 @@ exit 0
 	got := strings.TrimSpace(string(data))
 	want := strings.Join([]string{
 		"close",
+		"export:export -o " + filepath.Join(townRoot, ".beads", "issues.jsonl"),
 		"export:export -o " + filepath.Join(townRoot, ".beads", "issues.jsonl"),
 		"mail",
 		"update",
