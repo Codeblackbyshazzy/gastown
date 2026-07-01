@@ -1854,9 +1854,6 @@ func notifyConvoyCompletion(townBeads, convoyID, title string) {
 		fields = &beads.ConvoyFields{}
 	}
 	if fields.CompletionNotifiedAt != "" {
-		if err := persistTownBeadsJSONL(townBeads); err != nil {
-			style.PrintWarning("could not retry convoy completion notification JSONL export for %s: %v", convoyID, err)
-		}
 		return
 	}
 
