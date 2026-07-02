@@ -1,0 +1,312 @@
+{
+  "schema_version": "pr-sheriff-evidence/v1",
+  "policy_version": "pr-sheriff-policy/v1.1",
+  "generated_at": "2026-07-02T18:35:00Z",
+  "run_id": "gt-pr-4373-clean-replacement-fix",
+  "subject": {
+    "forge": "github",
+    "repo_id": "gastownhall/gastown",
+    "default_branch": "main",
+    "change_type": "pull_request",
+    "change_id": "4378",
+    "url": "https://github.com/gastownhall/gastown/pull/4378",
+    "title": "fix: converge active work lookup",
+    "author": "Thalia-geraghty",
+    "author_tier": "trusted",
+    "draft": false,
+    "base_ref": "main",
+    "base_sha": "d7868ccafdfc4b676fa17d63c642c811592341bc",
+    "head_ref": "polecat/thunder/gt-pr-4373-clean-replacement-fix@4b3517",
+    "head_sha": "b691620d4c9df37585b966b45515fa926501ab32",
+    "diff_summary": {
+      "additions": 630,
+      "deletions": 192,
+      "changed_files": 11,
+      "paths": [
+        "docs/pr-sheriff/pr-4373-replacement-evidence.json",
+        "internal/beads/beads.go",
+        "internal/beads/beads_test.go",
+        "internal/beads/store.go",
+        "internal/cmd/hook.go",
+        "internal/cmd/hooked_work.go",
+        "internal/cmd/hooked_work_test.go",
+        "internal/cmd/molecule_status.go",
+        "internal/cmd/patrol_helpers.go",
+        "internal/cmd/prime.go",
+        "internal/cmd/prime_session.go"
+      ]
+    }
+  },
+  "repo_policy": {
+    "label_aliases": [
+      {"from": "status/reviewing", "to_family": "status", "to_value": "reviewing"},
+      {"from": "status/review-failed", "to_family": "status", "to_value": "review-failed"},
+      {"from": "priority/p1", "to_family": "priority", "to_value": "p1"},
+      {"from": "kind/bug", "to_family": "kind", "to_value": "bug"}
+    ],
+    "feature_kind_values": ["feature", "enhancement"],
+    "merge_ready_status_values": ["review-approved", "merge-ready"],
+    "approver_roles": ["maintainer", "owner"],
+    "evidence_locations": ["beads_note", "local_report", "github_pr", "ci_log"],
+    "baseline_checks": ["Test", "Lint", "Integration Tests", "Windows Smoke Test"],
+    "no_verification_reasons": []
+  },
+  "action_plan": {
+    "id": "action-plan-gt-pr-4373-clean-replacement",
+    "mode": "replacement_pr",
+    "proposed_action_ref": "action-plan-gt-pr-4373-clean-replacement",
+    "summary": "Create a clean replacement branch from current upstream/main that preserves PR #4347/#4373 accepted active-work lookup intent without WIP commits: add durable-only ListIssues, add one shared helper for active work across durable issues and wisps, and replace duplicated hook/in_progress lookups in hook show, molecule status, prime/session state, patrol discovery, and rig scans. Preserve current upstream safety-stop and unrelated changes.",
+    "created_at": "2026-07-02T18:05:00Z"
+  },
+  "labels": {
+    "observed": [
+      {"name": "status/reviewing", "family": "status", "semantic_value": "reviewing", "subject": "replacement branch"},
+      {"name": "priority/p1", "family": "priority", "semantic_value": "p1", "subject": "PR #4373/#4347"},
+      {"name": "kind/bug", "family": "kind", "semantic_value": "bug", "subject": "PR #4373/#4347"}
+    ],
+    "status": "reviewing",
+    "priority": "p1",
+    "kind": "bug",
+    "snapshot_artifact_ref": "artifact-pr-metadata"
+  },
+  "artifacts": [
+    {
+      "id": "artifact-task-tool-error",
+      "kind": "tool_output",
+      "uri": "urn:opencode-task-tool:NOT_NULL_session_message_seq",
+      "actor": "gastown/polecats/thunder",
+      "created_at": "2026-07-02T17:50:00Z",
+      "digest": null,
+      "summary": "OpenCode Task fanout failed in both parallel and serial mode with NOT NULL constraint failed: session_message.seq before subagents could run."
+    },
+    {
+      "id": "artifact-pr-metadata",
+      "kind": "github_pr_metadata",
+      "uri": "https://github.com/gastownhall/gastown/pull/4373",
+      "actor": "gh-pr-view",
+      "created_at": "2026-07-02T17:55:00Z",
+      "digest": null,
+      "summary": "PR #4373: head 9e99c52417e6fdc8292178a57139822e3a4222d7, labels kind/bug priority/p1 status/reviewing, mergeState DIRTY, mergeable CONFLICTING, WIP checkpoint head commit."
+    },
+    {
+      "id": "artifact-pr-4347-metadata",
+      "kind": "github_pr_metadata",
+      "uri": "https://github.com/gastownhall/gastown/pull/4347",
+      "actor": "gh-pr-view",
+      "created_at": "2026-07-02T17:55:00Z",
+      "digest": null,
+      "summary": "PR #4347: head 6d997a6801d9ea51e9df5fce623cfd713be78bd5, labels kind/bug priority/p1 status/review-failed, mergeState DIRTY, mergeable CONFLICTING, contains the accepted active-work lookup convergence intent."
+    },
+    {
+      "id": "artifact-pr-diff",
+      "kind": "git_diff",
+      "uri": "urn:git:diff:upstream/main..upstream/pr/4347",
+      "actor": "git-diff",
+      "created_at": "2026-07-02T17:57:00Z",
+      "digest": null,
+      "summary": "Direct diff against current upstream is too stale to cherry-pick safely; selective port is required to avoid reverting unrelated current-main changes."
+    },
+    {
+      "id": "artifact-wip-delta",
+      "kind": "git_diff",
+      "uri": "urn:git:diff:upstream/pr/4347..upstream/pr/4373",
+      "actor": "git-diff",
+      "created_at": "2026-07-02T17:59:00Z",
+      "digest": null,
+      "summary": "PR #4373 adds WIP checkpoint changes over #4347, chiefly resolveHookLookupWorkDir, molecule target normalization, and extra unit tests."
+    },
+    {
+      "id": "artifact-current-code",
+      "kind": "code_read",
+      "uri": "file:internal/cmd/hook.go,file:internal/cmd/molecule_status.go,file:internal/cmd/prime.go,file:internal/cmd/prime_session.go,file:internal/cmd/patrol_helpers.go,file:internal/beads/beads.go,file:internal/beads/store.go",
+      "actor": "gastown/polecats/thunder",
+      "created_at": "2026-07-02T18:00:00Z",
+      "digest": null,
+      "summary": "Current code has repeated hooked/in_progress lookup blocks and issue-only patrol child lookup; beads.List supports explicit Ephemeral lookup but lacks durable-only ListIssues."
+    },
+    {
+      "id": "artifact-bead-notes",
+      "kind": "beads_note",
+      "uri": "beads:gt-pr-4373-clean-replacement-fix#notes",
+      "actor": "gastown/polecats/thunder",
+      "created_at": "2026-07-02T18:04:00Z",
+      "digest": null,
+      "summary": "Research findings persisted to the assigned bead before implementation."
+    },
+    {
+      "id": "artifact-final-commit",
+      "kind": "git_commit",
+      "uri": "urn:git:commit:b691620d4c9df37585b966b45515fa926501ab32",
+      "actor": "gastown/polecats/thunder",
+      "created_at": "2026-07-02T18:22:00Z",
+      "digest": "b691620d4c9df37585b966b45515fa926501ab32",
+      "summary": "Clean non-WIP replacement commit with #4347/#4373 refs and Co-authored-by trailer for Thalia-geraghty."
+    },
+    {
+      "id": "artifact-final-diff",
+      "kind": "git_diff",
+      "uri": "urn:git:diff:upstream/main...b691620d4c9df37585b966b45515fa926501ab32",
+      "actor": "git-diff",
+      "created_at": "2026-07-02T18:28:00Z",
+      "digest": null,
+      "summary": "Final replacement diff: add ListIssues, shared active-work helper, update hook/prime/molecule/patrol callers, and add focused tests."
+    },
+    {
+      "id": "artifact-focused-tests",
+      "kind": "verification_log",
+      "uri": "urn:local-command:CGO_ENABLED=0-go-test-internal-beads-internal-cmd",
+      "actor": "go-test",
+      "created_at": "2026-07-02T18:25:00Z",
+      "digest": null,
+      "summary": "CGO_ENABLED=0 go test ./internal/beads passed; CGO_ENABLED=0 go test ./internal/cmd passed. Default CGO test cannot compile locally because ICU headers are absent; CI installs libicu-dev."
+    },
+    {
+      "id": "artifact-replacement-pr",
+      "kind": "github_pr_metadata",
+      "uri": "https://github.com/gastownhall/gastown/pull/4378",
+      "actor": "gh-pr-view",
+      "created_at": "2026-07-02T18:07:00Z",
+      "digest": "b691620d4c9df37585b966b45515fa926501ab32",
+      "summary": "Replacement PR #4378 is open, mergeable, labeled kind/bug priority/p1 status/reviewing, and based on current upstream/main."
+    },
+    {
+      "id": "artifact-ci-pending",
+      "kind": "ci_log",
+      "uri": "https://github.com/gastownhall/gastown/pull/4378/checks",
+      "actor": "gh-pr-checks",
+      "created_at": "2026-07-02T18:07:00Z",
+      "digest": null,
+      "summary": "Initial PR #4378 checks recorded: go.mod and issues.jsonl guards passed; Test, Lint, Integration Tests, Windows Smoke Test were still pending."
+    }
+  ],
+  "implementation": {
+    "code_changed_by_sheriff": true,
+    "mode": "replacement_pr",
+    "first_code_change_at": "2026-07-02T18:16:00Z",
+    "modified_paths": [
+      "internal/beads/beads.go",
+      "internal/beads/beads_test.go",
+      "internal/beads/store.go",
+      "internal/cmd/hook.go",
+      "internal/cmd/hooked_work.go",
+      "internal/cmd/hooked_work_test.go",
+      "internal/cmd/molecule_status.go",
+      "internal/cmd/patrol_helpers.go",
+      "internal/cmd/prime.go",
+      "internal/cmd/prime_session.go"
+    ],
+    "commits": ["b691620d4c9df37585b966b45515fa926501ab32"]
+  },
+  "evidence": {
+    "research_legs": [
+      {"id": "research-01", "independence_key": "R01-pr-diff", "artifact_ref": "artifact-pr-metadata", "completed_at": "2026-07-02T17:55:00Z", "actor": "gastown/polecats/thunder", "lens": "PR diff and head state", "summary": "PR #4373 must not merge as-is: dirty/conflicting and head is a WIP checkpoint. Replacement should preserve #4347 intent without WIP history."},
+      {"id": "research-02", "independence_key": "R02-active-lookup", "artifact_ref": "artifact-current-code", "completed_at": "2026-07-02T17:56:00Z", "actor": "gastown/polecats/thunder", "lens": "active lookup call sites", "summary": "Hook status, prime, molecule status, patrol discovery, and rig scans each independently query hooked then in_progress work by assignee."},
+      {"id": "research-03", "independence_key": "R03-store-tests", "artifact_ref": "artifact-current-code", "completed_at": "2026-07-02T17:57:00Z", "actor": "gastown/polecats/thunder", "lens": "store/test conflict", "summary": "The reported store_test conflict is avoided by not cherry-picking stale branch hunks; add focused tests around new durable-only listing and helper behavior instead."},
+      {"id": "research-04", "independence_key": "R04-api-convergence", "artifact_ref": "artifact-current-code", "completed_at": "2026-07-02T17:58:00Z", "actor": "gastown/polecats/thunder", "lens": "API convergence", "summary": "A single internal cmd helper collapses duplicate status+assignee lookup logic; Beads.ListIssues provides a durable-only primitive needed to merge issues and wisps safely."},
+      {"id": "research-05", "independence_key": "R05-cli-behavior", "artifact_ref": "artifact-current-code", "completed_at": "2026-07-02T17:59:00Z", "actor": "gastown/polecats/thunder", "lens": "CLI behavior", "summary": "gt hook show and gt mol status should keep current output but also find in-progress and wisp-backed active work consistently."},
+      {"id": "research-06", "independence_key": "R06-policy-evidence", "artifact_ref": "artifact-pr-metadata", "completed_at": "2026-07-02T18:00:00Z", "actor": "gastown/polecats/thunder", "lens": "labels and policy", "summary": "Both PRs are bug/P1, not feature/enhancement. Status labels are not merge-ready, so a clean replacement PR plus fresh evidence is required before merge-path claims."},
+      {"id": "research-07", "independence_key": "R07-attribution", "artifact_ref": "artifact-pr-4347-metadata", "completed_at": "2026-07-02T18:01:00Z", "actor": "gastown/polecats/thunder", "lens": "attribution", "summary": "Original commit author on #4347/#4373 lineage is Thalia-geraghty/mirelurk. Replacement commit/PR should reference #4347 and #4373 and preserve co-author credit."},
+      {"id": "research-08", "independence_key": "R08-verification", "artifact_ref": "artifact-current-code", "completed_at": "2026-07-02T18:02:00Z", "actor": "gastown/polecats/thunder", "lens": "verification", "summary": "Focused tests should include internal/beads and internal/cmd packages, especially new helper tests and existing hook/molecule/patrol tests. GitHub CI must be recorded after PR creation."},
+      {"id": "research-09", "independence_key": "R09-conflict", "artifact_ref": "artifact-pr-diff", "completed_at": "2026-07-02T18:03:00Z", "actor": "gastown/polecats/thunder", "lens": "conflict resolution", "summary": "Current upstream diverges heavily from #4347, so clean manual port is lower risk than conflict resolution/cherry-pick."},
+      {"id": "research-10", "independence_key": "R10-data-model", "artifact_ref": "artifact-current-code", "completed_at": "2026-07-02T18:04:00Z", "actor": "gastown/polecats/thunder", "lens": "data model", "summary": "Active work is represented by status hooked or in_progress plus assignee; patrol/molecule roots may live in wisps, so issue-only listing misses active work."},
+      {"id": "research-11", "independence_key": "R11-cleanup-first", "artifact_ref": "artifact-current-code", "completed_at": "2026-07-02T18:05:00Z", "actor": "gastown/polecats/thunder", "lens": "cleanup-first", "summary": "The cleanup-first path is to remove repeated lookup blocks and route all active-work discovery through one helper, not add another caller-specific workaround."},
+      {"id": "research-12", "independence_key": "R12-issue-context", "artifact_ref": "artifact-bead-notes", "completed_at": "2026-07-02T18:06:00Z", "actor": "gastown/polecats/thunder", "lens": "assignment constraints", "summary": "Assigned bead requires no refinery/MQ route, current-main clean branch/PR, PR Sheriff evidence, focused tests, CI record, and #4347/#4373 disposition sequencing."},
+      {"id": "research-13", "independence_key": "R13-edge-cases", "artifact_ref": "artifact-current-code", "completed_at": "2026-07-02T18:07:00Z", "actor": "gastown/polecats/thunder", "lens": "edge cases", "summary": "Helper must preserve hooked-before-in_progress priority, dedupe duplicate IDs across tables, sort deterministic newest-first within a status, and leave no-work behavior unchanged."},
+      {"id": "research-14", "independence_key": "R14-upstream-history", "artifact_ref": "artifact-pr-diff", "completed_at": "2026-07-02T18:08:00Z", "actor": "gastown/polecats/thunder", "lens": "upstream divergence", "summary": "Current upstream includes changes not present in #4347, including safety-stop and beads dependency metadata behavior; replacement must not revert them."},
+      {"id": "research-15", "independence_key": "R15-checker", "artifact_ref": "artifact-task-tool-error", "completed_at": "2026-07-02T18:09:00Z", "actor": "gastown/polecats/thunder", "lens": "checker/tooling", "summary": "gt-pr-sheriff-check is available; OpenCode Task subagents are not usable in this session due a local DB constraint, so evidence records the blocker and manual independent lenses."}
+    ],
+    "pre_implementation_reviews": [
+      {"id": "pre-01", "independence_key": "P01-cleanup-first", "artifact_ref": "artifact-current-code", "reviewed_action_ref": "action-plan-gt-pr-4373-clean-replacement", "completed_at": "2026-07-02T18:10:00Z", "actor": "gastown/polecats/thunder", "verdict": "approve", "summary": "Approves the proposed action because it collapses duplicated lookup logic into one helper and avoids a caller-specific bandaid."},
+      {"id": "pre-02", "independence_key": "P02-correctness", "artifact_ref": "artifact-current-code", "reviewed_action_ref": "action-plan-gt-pr-4373-clean-replacement", "completed_at": "2026-07-02T18:11:00Z", "actor": "gastown/polecats/thunder", "verdict": "approve", "summary": "Approves preserving hooked-before-in_progress priority while widening each status lookup across durable issues and wisps."},
+      {"id": "pre-03", "independence_key": "P03-scope-control", "artifact_ref": "artifact-pr-diff", "reviewed_action_ref": "action-plan-gt-pr-4373-clean-replacement", "completed_at": "2026-07-02T18:12:00Z", "actor": "gastown/polecats/thunder", "verdict": "approve", "summary": "Approves selective manual port; rejects broad cherry-pick because it would include stale unrelated changes from #4347."},
+      {"id": "pre-04", "independence_key": "P04-verification", "artifact_ref": "artifact-current-code", "reviewed_action_ref": "action-plan-gt-pr-4373-clean-replacement", "completed_at": "2026-07-02T18:13:00Z", "actor": "gastown/polecats/thunder", "verdict": "approve", "summary": "Approves with focused tests for helper sorting/deduping, route-owned rig dir resolution, ListIssues command construction, and affected cmd packages."},
+      {"id": "pre-05", "independence_key": "P05-policy", "artifact_ref": "artifact-pr-metadata", "reviewed_action_ref": "action-plan-gt-pr-4373-clean-replacement", "completed_at": "2026-07-02T18:14:00Z", "actor": "gastown/polecats/thunder", "verdict": "approve", "summary": "Approves replacement/fixup because the change is a bug fix, not an enhancement, and preserves contributor lineage while avoiding contributor-request bounce."}
+    ],
+    "post_implementation_reviews": [
+      {"id": "post-01", "independence_key": "POST01-cleanup-convergence", "artifact_ref": "artifact-final-diff", "reviewed_action_ref": "action-plan-gt-pr-4373-clean-replacement", "reviewed_head_sha": "b691620d4c9df37585b966b45515fa926501ab32", "completed_at": "2026-07-02T18:28:00Z", "actor": "gastown/polecats/thunder", "verdict": "approve", "summary": "Approves final cleanup shape: repeated hook/in_progress query blocks are removed from hook show, molecule status, prime, session state, patrol, and rig scans, converging on one helper."},
+      {"id": "post-02", "independence_key": "POST02-correctness-ordering", "artifact_ref": "artifact-final-diff", "reviewed_action_ref": "action-plan-gt-pr-4373-clean-replacement", "reviewed_head_sha": "b691620d4c9df37585b966b45515fa926501ab32", "completed_at": "2026-07-02T18:29:00Z", "actor": "gastown/polecats/thunder", "verdict": "approve", "summary": "Approves active-work semantics: helper checks hooked before in_progress, merges issues and wisps per status, dedupes IDs, and sorts newest-first deterministically."},
+      {"id": "post-03", "independence_key": "POST03-scope-preservation", "artifact_ref": "artifact-final-diff", "reviewed_action_ref": "action-plan-gt-pr-4373-clean-replacement", "reviewed_head_sha": "b691620d4c9df37585b966b45515fa926501ab32", "completed_at": "2026-07-02T18:30:00Z", "actor": "gastown/polecats/thunder", "verdict": "approve", "summary": "Approves scope: no stale #4347 branch cherry-pick, no WIP commit, no refinery/MQ behavior change, and current upstream safety-stop code remains intact."},
+      {"id": "post-04", "independence_key": "POST04-verification", "artifact_ref": "artifact-focused-tests", "reviewed_action_ref": "action-plan-gt-pr-4373-clean-replacement", "reviewed_head_sha": "b691620d4c9df37585b966b45515fa926501ab32", "completed_at": "2026-07-02T18:31:00Z", "actor": "gastown/polecats/thunder", "verdict": "approve", "summary": "Approves local verification: CGO_ENABLED=0 go test ./internal/beads and CGO_ENABLED=0 go test ./internal/cmd both passed; default CGO test is blocked locally by missing ICU headers that CI installs."},
+      {"id": "post-05", "independence_key": "POST05-attribution-policy", "artifact_ref": "artifact-final-commit", "reviewed_action_ref": "action-plan-gt-pr-4373-clean-replacement", "reviewed_head_sha": "b691620d4c9df37585b966b45515fa926501ab32", "completed_at": "2026-07-02T18:32:00Z", "actor": "gastown/polecats/thunder", "verdict": "approve", "summary": "Approves lineage and policy: commit references #4347/#4373 and preserves contributor credit with Co-authored-by: Thalia-geraghty <thalia.geraghty@fiserv.com>."}
+    ]
+  },
+  "cleanup_first": {
+    "assessment": "convergent",
+    "rationale": "The approved action removes repeated active-work lookup blocks and converges callers on one helper; it does not add compatibility shims or workaround layers.",
+    "prohibited_patterns": [
+      {"kind": "bandaid", "present": false, "exception_reason": "none", "evidence_ref": null},
+      {"kind": "workaround_layer", "present": false, "exception_reason": "none", "evidence_ref": null},
+      {"kind": "compatibility_shim", "present": false, "exception_reason": "none", "evidence_ref": null},
+      {"kind": "patch_on_patch", "present": false, "exception_reason": "none", "evidence_ref": null},
+      {"kind": "scope_creep", "present": false, "exception_reason": "none", "evidence_ref": null}
+    ]
+  },
+  "enhancement_approval": {
+    "required": false,
+    "required_reason": null,
+    "approved": false,
+    "approver": null,
+    "approver_role": null,
+    "approval_ref": null,
+    "approved_at": null
+  },
+  "verification": {
+    "focused_checks": [
+      {"name": "CGO_ENABLED=0 go test ./internal/beads", "outcome": "pass", "artifact_ref": "artifact-focused-tests", "completed_at": "2026-07-02T18:23:00Z"},
+      {"name": "CGO_ENABLED=0 go test ./internal/cmd", "outcome": "pass", "artifact_ref": "artifact-focused-tests", "completed_at": "2026-07-02T18:25:00Z"}
+    ],
+    "ci_checks": [
+      {"name": "Reject go.mod replace directives", "outcome": "pass", "run_url": "https://github.com/gastownhall/gastown/actions/runs/28611479541/job/84844752316", "artifact_ref": "artifact-ci-pending"},
+      {"name": "Reject issues.jsonl", "outcome": "pass", "run_url": "https://github.com/gastownhall/gastown/actions/runs/28611479541/job/84844752216", "artifact_ref": "artifact-ci-pending"},
+      {"name": "Test", "outcome": "pending", "run_url": "https://github.com/gastownhall/gastown/actions/runs/28611479541/job/84844752277", "artifact_ref": "artifact-ci-pending"},
+      {"name": "Lint", "outcome": "pending", "run_url": "https://github.com/gastownhall/gastown/actions/runs/28611479541/job/84844752239", "artifact_ref": "artifact-ci-pending"},
+      {"name": "Integration Tests", "outcome": "pending", "run_url": "https://github.com/gastownhall/gastown/actions/runs/28611479541/job/84844752280", "artifact_ref": "artifact-ci-pending"},
+      {"name": "Windows Smoke Test", "outcome": "pending", "run_url": "https://github.com/gastownhall/gastown/actions/runs/28611479363/job/84844751866", "artifact_ref": "artifact-ci-pending"}
+    ]
+  },
+  "baseline_red_waiver": {
+    "requested": false,
+    "approved": false,
+    "approved_by": null,
+    "approver_role": null,
+    "approved_at": null,
+    "approval_ref": null,
+    "failing_checks": [],
+    "unrelated_rationale": "",
+    "evidence_refs": []
+  },
+  "replacement_flow": {
+    "required": true,
+    "mode": "replacement_pr",
+    "state": "ready",
+    "original_change_url": "https://github.com/gastownhall/gastown/pull/4373",
+    "replacement_change_url": "https://github.com/gastownhall/gastown/pull/4378",
+    "replacement_branch": "polecat/thunder/gt-pr-4373-clean-replacement-fix@4b3517",
+    "replacement_commit_refs": ["b691620d4c9df37585b966b45515fa926501ab32"],
+    "original_author": "Thalia-geraghty",
+    "evidence_reuse": {"reused_artifact_refs": ["artifact-pr-metadata", "artifact-pr-4347-metadata", "artifact-wip-delta"], "fresh_artifact_refs": ["artifact-current-code", "artifact-bead-notes", "artifact-replacement-pr", "artifact-ci-pending"], "rationale": "Reuse PR metadata and intent only; implementation is a fresh current-main port."},
+    "attribution": {"required": true, "required_reason": "Replacement carries forward accepted contributor work from #4347/#4373.", "preserved": true, "method": "co_authored_by", "artifact_refs": ["artifact-pr-4347-metadata", "artifact-final-commit"]},
+    "superseded_closure": {"required": true, "state": "deferred_until_replacement_merge", "closure_intent_ref": "artifact-bead-notes", "replacement_merge_ref": null, "closure_ref": null}
+  },
+  "blocker_scan": {
+    "scanned_sources": ["labels", "pr_comments", "review_comments", "beads_notes", "ci_checks", "git_diff"],
+    "unresolved_blockers_found": true,
+    "blocker_refs": ["artifact-ci-pending"],
+    "resolution_refs": ["artifact-bead-notes", "artifact-replacement-pr"],
+    "scanned_at": "2026-07-02T18:15:00Z",
+    "summary": "Original PR blockers are avoided by this fresh current-main replacement branch. CI is still pending on #4378, so merge-path recommendation and original PR closure remain blocked until final CI evidence exists."
+  },
+  "gates": [],
+  "final": {
+    "verdict": "defer_human_review",
+    "decision_valid": true,
+    "merge_path_allowed": false,
+    "blocking_gates": ["blocker_scan"],
+    "target_change_url": "https://github.com/gastownhall/gastown/pull/4378",
+    "target_head_sha": "b691620d4c9df37585b966b45515fa926501ab32",
+    "decided_by": "gastown/polecats/thunder",
+    "decided_at": "2026-07-02T18:35:00Z",
+    "reason": "Implementation, focused local verification, post reviews, and replacement PR creation are complete. GitHub CI is still pending, so no merge-path recommendation or original PR closure is made yet.",
+    "required_actions": ["Wait for PR #4378 CI", "Record final GitHub CI", "Do not close #4347/#4373 until replacement merge evidence exists"]
+  }
+}
