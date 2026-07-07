@@ -32,12 +32,44 @@ func TestWitnessHasSubmittableWorkUsesBranchTargetStatus(t *testing.T) {
 	}
 }
 
+func TestVerifyBranchAlreadyMergedUsesBranchTargetStatus(t *testing.T) {
+	townRoot, workDir := setupSlotOpenTestTown(t)
+	repo := filepath.Join(townRoot, "gastown", "polecats", "institute", "gastown")
+	setupWitnessSquashPreservedRepoAt(t, repo, filepath.Join(t.TempDir(), "remote.git"))
+	runWitnessGit(t, repo, "push", "origin", "integration/test:main")
+
+	merged, err := _verifyBranchAlreadyMerged(workDir, "gastown", "institute")
+	if err != nil {
+		t.Fatalf("_verifyBranchAlreadyMerged: %v", err)
+	}
+	if !merged {
+		t.Fatal("squash-preserved branch on advanced default target should be treated as already merged")
+	}
+
+	witnessWriteFile(t, filepath.Join(repo, "feature.txt"), "one\ntwo\nthree\n")
+	runWitnessGit(t, repo, "add", "feature.txt")
+	runWitnessGit(t, repo, "commit", "-m", "extra local work")
+	merged, err = _verifyBranchAlreadyMerged(workDir, "gastown", "institute")
+	if err != nil {
+		t.Fatalf("_verifyBranchAlreadyMerged after extra work: %v", err)
+	}
+	if merged {
+		t.Fatal("new local work after squash preservation should not be treated as already merged")
+	}
+}
+
 func setupWitnessSquashPreservedRepo(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
 	remote := filepath.Join(root, "remote.git")
 	repo := filepath.Join(root, "repo")
-	runWitnessGit(t, root, "init", "--bare", remote)
+	setupWitnessSquashPreservedRepoAt(t, repo, remote)
+	return repo
+}
+
+func setupWitnessSquashPreservedRepoAt(t *testing.T, repo, remote string) {
+	t.Helper()
+	runWitnessGit(t, filepath.Dir(remote), "init", "--bare", remote)
 	if err := os.MkdirAll(repo, 0755); err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +103,6 @@ func setupWitnessSquashPreservedRepo(t *testing.T) string {
 	runWitnessGit(t, repo, "commit", "-m", "advance target")
 	runWitnessGit(t, repo, "push", "origin", "integration/test")
 	runWitnessGit(t, repo, "switch", "polecat/squash")
-	return repo
 }
 
 func witnessWriteFile(t *testing.T, path, data string) {
@@ -2728,33 +2759,6 @@ func TestNotifyRefineryMergeReady_EmitsChannelEvent(t *testing.T) {
 	}
 	if payload["rig"] != "dashboard" {
 		t.Errorf("payload.rig = %v, want dashboard", payload["rig"])
-	}
-}
-
-// TestCherryHasUnmergedCommits covers the git-cherry output parser used by
-// verifyBranchAlreadyMerged (aa-apw).
-func TestCherryHasUnmergedCommits(t *testing.T) {
-	t.Parallel()
-	cases := []struct {
-		name string
-		in   string
-		want bool
-	}{
-		{"empty output — branch has no commits beyond base", "", false},
-		{"whitespace only", "  \n\n", false},
-		{"all squash-applied (-)", "- abc123\n- def456\n", false},
-		{"one unmerged (+)", "+ abc123\n", true},
-		{"mixed", "- abc123\n+ def456\n", true},
-		{"unmerged only", "+ a\n+ b\n+ c\n", true},
-	}
-	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			if got := cherryHasUnmergedCommits(tc.in); got != tc.want {
-				t.Errorf("cherryHasUnmergedCommits(%q) = %v, want %v", tc.in, got, tc.want)
-			}
-		})
 	}
 }
 

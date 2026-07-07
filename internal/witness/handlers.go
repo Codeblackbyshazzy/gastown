@@ -1100,7 +1100,7 @@ func witnessRecoveryTargetRefs(bd *beads.Beads, fields *beads.AgentFields, branc
 			if mrFields := beads.ParseMRFields(issue); mrFields != nil && mrFields.Target != "" {
 				refs = append(refs, mrFields.Target)
 			}
-		} else {
+		} else if !errors.Is(err, beads.ErrNotFound) {
 			lookupFailed = true
 		}
 	}
@@ -1109,7 +1109,7 @@ func witnessRecoveryTargetRefs(bd *beads.Beads, fields *beads.AgentFields, branc
 			if mrFields := beads.ParseMRFields(issue); mrFields != nil && mrFields.Target != "" {
 				refs = append(refs, mrFields.Target)
 			}
-		} else {
+		} else if !errors.Is(err, beads.ErrNotFound) {
 			lookupFailed = true
 		}
 	}
@@ -1468,11 +1468,9 @@ func _verifyCommitOnMain(workDir, rigName, polecatName string) (bool, error) {
 // Flow (aa-apw):
 //  1. Fast path: ancestor check via verifyCommitOnMain (catches fast-forward /
 //     regular merges).
-//  2. Patch-id path: `git cherry <remote>/<default> <HEAD>` lines starting with
-//     "-" mean the patch-id is already applied upstream. If every commit the
-//     polecat branch adds on top of origin/main is marked "-", the work is
-//     equivalent to something already merged (e.g., squash-merged). Empty
-//     output is also equivalent — branch has no commits beyond base.
+//  2. Target-preservation path: reuse git.BranchTargetStatus so squash-merged
+//     checkpoint work, patch-equivalent work, and advanced default branches are
+//     classified the same way as check-recovery and reuse.
 //
 // Returns:
 //   - true, nil: work on this branch is already on default branch (skip restart,
@@ -1511,38 +1509,22 @@ func _verifyBranchAlreadyMerged(workDir, rigName, polecatName string) (bool, err
 		remotes = []string{"origin"}
 	}
 
-	// git cherry marks each commit that HEAD introduces on top of <upstream>:
-	//   "+ <sha>" — patch-id not present upstream
-	//   "- <sha>" — patch-id already upstream (e.g., squash-merged)
-	// If no "+" lines remain, the work is fully landed.
+	branch, err := g.CurrentBranch()
+	if err != nil {
+		return false, err
+	}
 	for _, remote := range remotes {
 		upstream := remote + "/" + defaultBranch
-		out, err := g.Cherry(upstream, "HEAD")
+		status, err := g.BranchTargetStatus(branch, remote, []string{upstream})
 		if err != nil {
 			continue // try next remote
 		}
-		if !cherryHasUnmergedCommits(out) {
+		if status.Preserved {
 			return true, nil
 		}
 	}
 
 	return false, nil
-}
-
-// cherryHasUnmergedCommits returns true if `git cherry` output contains at least
-// one commit marked with "+" (not yet upstream). Empty output means no commits
-// beyond base — already merged.
-func cherryHasUnmergedCommits(out string) bool {
-	for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		if strings.HasPrefix(line, "+") {
-			return true
-		}
-	}
-	return false
 }
 
 // ZombieClassification categorizes why a polecat was classified as a zombie.

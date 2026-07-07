@@ -1503,14 +1503,14 @@ func recoveryTargetRefs(bd *beads.Beads, issueID, activeMR, branch string, extra
 		if activeMR != "" {
 			if issue, err := bd.Show(activeMR); err == nil {
 				appendMRTarget(issue)
-			} else {
+			} else if !errors.Is(err, beads.ErrNotFound) {
 				lookupFailed = true
 			}
 		}
 		if branch != "" {
 			if issue, err := bd.FindMRForBranchAny(branch); err == nil {
 				appendMRTarget(issue)
-			} else {
+			} else if !errors.Is(err, beads.ErrNotFound) {
 				lookupFailed = true
 			}
 		}

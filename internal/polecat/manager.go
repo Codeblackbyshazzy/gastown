@@ -2323,7 +2323,7 @@ func (m *Manager) reuseTargetRefs(fields *beads.AgentFields, branch string) ([]s
 			if mrFields := beads.ParseMRFields(issue); mrFields != nil && mrFields.Target != "" {
 				refs = append(refs, mrFields.Target)
 			}
-		} else {
+		} else if !errors.Is(err, beads.ErrNotFound) {
 			lookupFailed = true
 		}
 	}
@@ -2332,7 +2332,7 @@ func (m *Manager) reuseTargetRefs(fields *beads.AgentFields, branch string) ([]s
 			if mrFields := beads.ParseMRFields(issue); mrFields != nil && mrFields.Target != "" {
 				refs = append(refs, mrFields.Target)
 			}
-		} else {
+		} else if !errors.Is(err, beads.ErrNotFound) {
 			lookupFailed = true
 		}
 	}
