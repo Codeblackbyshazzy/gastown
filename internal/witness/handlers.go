@@ -1030,9 +1030,11 @@ func slotOpenDecision(workDir, townRoot, rigName, polecatName, exitType string) 
 	}
 	clonePath := filepath.Join(townRoot, rigName, "polecats", polecatName, rigName)
 	g := git.NewGit(clonePath)
-	targetRefs := witnessRecoveryTargetRefs(beads.New(beads.ResolveBeadsDir(workDir)), fields)
+	bd := beads.New(beads.ResolveBeadsDir(workDir))
+	var targetRefs []string
 	if branch, err := g.CurrentBranch(); err == nil {
 		input.Branch = branch
+		targetRefs = witnessRecoveryTargetRefs(bd, fields, branch)
 		if status, err := g.CheckUncommittedWork(); err == nil {
 			input.GitDirty = !status.CleanExcludingRuntime()
 			input.StashCount = status.StashCount
@@ -1056,7 +1058,7 @@ func slotOpenDecision(workDir, townRoot, rigName, polecatName, exitType string) 
 		if sourceHint == "" {
 			sourceHint = fields.HookBead
 		}
-		assessment := polecat.AssessActiveMR(beads.New(beads.ResolveBeadsDir(workDir)), polecat.ActiveMRInput{ActiveMR: fields.ActiveMR, SourceIssueHint: sourceHint, RequireGitSafe: true, GitSafe: gitSafe})
+		assessment := polecat.AssessActiveMR(bd, polecat.ActiveMRInput{ActiveMR: fields.ActiveMR, SourceIssueHint: sourceHint, RequireGitSafe: true, GitSafe: gitSafe})
 		if assessment.Pending {
 			input.ActiveMRBlocker = assessment.Reason
 		}
@@ -1083,7 +1085,7 @@ func slotOpenDecision(workDir, townRoot, rigName, polecatName, exitType string) 
 	return polecat.DecideSlotReuse(input)
 }
 
-func witnessRecoveryTargetRefs(bd *beads.Beads, fields *beads.AgentFields) []string {
+func witnessRecoveryTargetRefs(bd *beads.Beads, fields *beads.AgentFields, branch string) []string {
 	if fields == nil || bd == nil {
 		return nil
 	}
@@ -1093,6 +1095,18 @@ func witnessRecoveryTargetRefs(bd *beads.Beads, fields *beads.AgentFields) []str
 			if mrFields := beads.ParseMRFields(issue); mrFields != nil && mrFields.Target != "" {
 				refs = append(refs, mrFields.Target)
 			}
+		}
+	}
+	if branch != "" {
+		if issue, err := bd.FindMRForBranchAny(branch); err == nil {
+			if mrFields := beads.ParseMRFields(issue); mrFields != nil && mrFields.Target != "" {
+				refs = append(refs, mrFields.Target)
+			}
+		}
+	}
+	if fields.LastSourceIssue != "" && fields.LastSourceIssue != fields.HookBead {
+		if issue, err := bd.Show(fields.LastSourceIssue); err == nil {
+			refs = append(refs, witnessAttachmentTargetRefs(bd, issue)...)
 		}
 	}
 	if fields.HookBead != "" {

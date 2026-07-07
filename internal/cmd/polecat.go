@@ -1099,12 +1099,12 @@ func runPolecatCheckRecovery(cmd *cobra.Command, args []string) error {
 		// Use cleanup_status from agent bead, then overlay direct git and MQ facts.
 		input.CleanupStatus = polecat.CleanupStatus(fields.CleanupStatus)
 		status.ActiveMR = fields.ActiveMR
-		targetRefs = recoveryTargetRefs(bd, status.Issue, status.ActiveMR, status.Branch)
 		input.ActiveMR = fields.ActiveMR
 		hookBead := agentHookBead(agentIssue, fields)
 		hookSafe, hookTerminal, hookBlocker := hookBeadSafeForCleanup(bd, hookBead)
 		workTerminal = beadTerminal || hookTerminal
 		sourceHint := agentSourceIssueHint(status.Issue, fields)
+		targetRefs = recoveryTargetRefs(bd, status.Issue, status.ActiveMR, status.Branch, sourceHint)
 		if status.Issue == "" && sourceHint != "" {
 			status.Issue = sourceHint
 		}
@@ -1488,7 +1488,7 @@ func isRecoveryBaseBranch(branch string) bool {
 	return branch == "main" || branch == "master" || strings.HasPrefix(branch, "integration/")
 }
 
-func recoveryTargetRefs(bd *beads.Beads, issueID, activeMR, branch string) []string {
+func recoveryTargetRefs(bd *beads.Beads, issueID, activeMR, branch string, extraIssueIDs ...string) []string {
 	var refs []string
 	appendMRTarget := func(issue *beads.Issue) {
 		if fields := beads.ParseMRFields(issue); fields != nil && fields.Target != "" {
@@ -1506,8 +1506,11 @@ func recoveryTargetRefs(bd *beads.Beads, issueID, activeMR, branch string) []str
 				appendMRTarget(issue)
 			}
 		}
-		if issueID != "" {
-			if issue, err := bd.Show(issueID); err == nil {
+		for _, candidateIssueID := range append([]string{issueID}, extraIssueIDs...) {
+			if candidateIssueID == "" {
+				continue
+			}
+			if issue, err := bd.Show(candidateIssueID); err == nil {
 				appendAttachmentTargets(&refs, bd, issue)
 			}
 		}

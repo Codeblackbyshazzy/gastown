@@ -2204,8 +2204,6 @@ func (m *Manager) workstateInputForPolecat(name string, state State, issue strin
 			input.CleanupStatus = CleanupStatus(fields.CleanupStatus)
 		}
 	}
-	targetRefs := m.reuseTargetRefs(fields)
-
 	clonePath := m.clonePath(name)
 	g := git.NewGit(clonePath)
 	branch, branchErr := g.CurrentBranch()
@@ -2214,6 +2212,7 @@ func (m *Manager) workstateInputForPolecat(name string, state State, issue strin
 	} else {
 		input.Branch = branch
 	}
+	targetRefs := m.reuseTargetRefs(fields, branch)
 	if status, err := g.CheckUncommittedWork(); err == nil {
 		input.GitDirty = !status.CleanExcludingRuntime()
 		input.StashCount = status.StashCount
@@ -2310,7 +2309,7 @@ func hasSubmittableWorkForWorkstate(worktreePath string, targetRefs []string) bo
 	return err == nil && status.UnpreservedPatchCount > 0
 }
 
-func (m *Manager) reuseTargetRefs(fields *beads.AgentFields) []string {
+func (m *Manager) reuseTargetRefs(fields *beads.AgentFields, branch string) []string {
 	if fields == nil {
 		return nil
 	}
@@ -2320,6 +2319,18 @@ func (m *Manager) reuseTargetRefs(fields *beads.AgentFields) []string {
 			if mrFields := beads.ParseMRFields(issue); mrFields != nil && mrFields.Target != "" {
 				refs = append(refs, mrFields.Target)
 			}
+		}
+	}
+	if branch != "" {
+		if issue, err := m.beads.FindMRForBranchAny(branch); err == nil {
+			if mrFields := beads.ParseMRFields(issue); mrFields != nil && mrFields.Target != "" {
+				refs = append(refs, mrFields.Target)
+			}
+		}
+	}
+	if fields.LastSourceIssue != "" && fields.LastSourceIssue != fields.HookBead {
+		if issue, err := m.beads.Show(fields.LastSourceIssue); err == nil {
+			refs = append(refs, attachmentTargetRefs(m.beads, issue)...)
 		}
 	}
 	if fields.HookBead != "" {

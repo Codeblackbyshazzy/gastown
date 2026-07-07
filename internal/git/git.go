@@ -2802,8 +2802,7 @@ func comparisonRefCandidates(ref, remote string) []string {
 	if strings.HasPrefix(ref, "refs/") || strings.HasPrefix(ref, remote+"/") {
 		return []string{ref}
 	}
-	branch := strings.TrimPrefix(ref, "origin/")
-	return []string{ref, remote + "/" + branch}
+	return []string{remote + "/" + ref, ref}
 }
 
 func (g *Git) preservationAgainstRef(ref string) (BranchPreservationStatus, error) {
